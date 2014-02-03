@@ -41,13 +41,16 @@ class SonataNotificationExtension extends Extension
         $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
 
         $loader->load('core.xml');
-        $loader->load('doctrine_orm.xml');
         $loader->load('backend.xml');
         $loader->load('consumer.xml');
-        $loader->load('selector.xml');
-        $loader->load('event.xml');
 
         $bundles = $container->getParameter('kernel.bundles');
+        if (isset($bundles['DoctrineBundle'])) {
+            $loader->load('doctrine_orm.xml');
+            $loader->load('selector.xml');
+            $loader->load('event.xml');
+        }
+
         if (isset($bundles['SonataDoctrineORMAdminBundle'])) { // for now, only support for ORM
             $loader->load('admin.xml');
         }
@@ -96,8 +99,10 @@ class SonataNotificationExtension extends Extension
         $ids = $config['iteration_listeners'];
 
         // this one clean the unit of work after every iteration
-        // it must be set on any backend ...
-        $ids[] = 'sonata.notification.event.doctrine_optimize';
+        // it must be set on any backend (if doctrine is enabled)
+        if (isset($bundles['DoctrineBundle'])) {
+            $ids[] = 'sonata.notification.event.doctrine_optimize';
+        }
 
         if (isset($config['backends']['doctrine']) && $config['backends']['doctrine']['batch_size'] > 1) {
             // if the backend is doctrine and the batch size > 1, then
@@ -151,9 +156,6 @@ class SonataNotificationExtension extends Extension
       */
     public function configureBackends(ContainerBuilder $container, $config)
     {
-        // set the default value, will be erase if required
-        $container->setAlias('sonata.notification.manager.message', 'sonata.notification.manager.message.default');
-
         if (isset($config['backends']['rabbitmq']) && $config['backend']  === 'sonata.notification.backend.rabbitmq') {
             $this->configureRabbitmq($container, $config);
 

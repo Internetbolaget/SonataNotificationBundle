@@ -48,7 +48,7 @@ class NotificationCompilerPass implements CompilerPassInterface
 
         $container->getDefinition('sonata.notification.consumer.metadata')->replaceArgument(0, $informations);
 
-        if ($container->getParameter('sonata.notification.event.iteration_listeners')) {
+        if ($container->hasParameter('sonata.notification.event.iteration_listeners')) {
             $ids = $container->getParameter('sonata.notification.event.iteration_listeners');
 
             foreach ($ids as $serviceId) {
