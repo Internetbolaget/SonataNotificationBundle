@@ -30,6 +30,7 @@ class ConsumerHandlerCommand extends ContainerAwareCommand
         $this->setName('sonata:notification:start');
         $this->setDescription('Listen for incoming messages');
         $this->addOption('iteration', 'i', InputOption::VALUE_OPTIONAL, 'Only run n iterations before exiting', false);
+        $this->addOption('memory-limit', 'm', InputOption::VALUE_OPTIONAL, 'Exit the program when reaching n amount of memory', false);
         $this->addOption('type', null, InputOption::VALUE_OPTIONAL, 'Use a specific backed based on a message type, "all" with doctrine backend will handle all notifications no matter their type', null);
         $this->addOption('show-details', 'd', InputOption::VALUE_OPTIONAL, 'Show consumers return details', true);
     }
@@ -128,6 +129,16 @@ class ConsumerHandlerCommand extends ContainerAwareCommand
 
                 return;
             }
+
+            if ($memoryLimit = $input->getOption('memory-limit')) {
+                $bytes = $this->memoryLimitToBytes($memoryLimit);
+                $memoryUsage = memory_get_usage(true);
+
+                if ($memoryUsage > $bytes) {
+                    $output->writeln('Reached memory limit of ' . $memoryLimit);
+                    return;
+                }
+            }
         }
     }
 
@@ -145,6 +156,23 @@ class ConsumerHandlerCommand extends ContainerAwareCommand
         }
 
         return round($memory / 1048576, 2)."Mb";
+    }
+
+    private function memoryLimitToBytes($val)
+    {
+        $val = trim($val);
+        $last = strtolower($val[strlen($val)-1]);
+        switch($last) {
+            // The 'G' modifier is available since PHP 5.1.0
+            case 'g':
+                $val *= 1024;
+            case 'm':
+                $val *= 1024;
+            case 'k':
+                $val *= 1024;
+        }
+
+        return $val;
     }
 
     /**
