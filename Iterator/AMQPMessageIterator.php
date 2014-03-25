@@ -74,6 +74,8 @@ class AMQPMessageIterator implements MessageIteratorInterface
      */
     public function rewind()
     {
+        $this->channel->basic_qos(0, 1, false);
+
         $this->channel->basic_consume(
             $this->queue,
             'sonata_notification_'.uniqid(),
